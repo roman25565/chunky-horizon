@@ -1,0 +1,12 @@
+[package]
+name = "chunky-core"
+version = "1.0.0"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Chunky for Horizon: shapes, patterns, the selection, task files and command input, without the game"
+
+[lib]
+path = "src/lib.rs"
+
+# No dependencies: plain Rust, tested on its own (`cargo test` in this folder).
+[dependencies]

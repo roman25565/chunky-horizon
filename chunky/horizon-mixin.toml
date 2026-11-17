@@ -1,0 +1,101 @@
+# Chunky for Horizon: a chunk pre-generator, a port of Chunky (pop4959/Chunky, GPL-3.0).
+# /chunky picks an area (world, centre, radius, shape, pattern) and generates, lights and
+# saves every chunk in it while the server keeps running. Server side only: players need
+# nothing installed. Settings: config/chunky/config.properties; tasks are kept in the
+# world, world/chunky/tasks/<namespace>/<level>.properties, so pause/continue survives a
+# restart.
+[mod]
+id = "chunky"
+version = "1.0.0"
+
+# The glue reads the level's streaming and chunks (whether a held chunk is lit and
+# post-processed), which are Game's own fields, not hook API: the mod is pinned to the
+# Horizon commit it was built and checked on, the same as the other server mods.
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+# Shapes, patterns, the selection, task files, input and progress: a crate without the
+# game, tested on its own (`cargo test` in core/).
+[[crate]]
+id = "core"
+path = "core"
+dependent = "horizon-client"
+
+# /chunky, the tasks and their files.
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "chunky_glue"
+source = "glue.rs"
+
+[[injection]]
+id = "register"
+hook = "register_commands"
+hook_version = 1
+kind = "HEAD"
+helper = "register.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<crate::game::native_server::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "command"
+hook = "perform_command"
+hook_version = 1
+kind = "HEAD"
+helper = "command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&crate::game::native_server::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "console"
+hook = "perform_console_command"
+hook_version = 1
+kind = "HEAD"
+helper = "console.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "level-tick"
+hook = "level_tick_post"
+hook_version = 1
+kind = "HEAD"
+helper = "level_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "dimension", ty = "&str", value = "dimension" },
+]
+
+[[injection]]
+id = "tick"
+hook = "server_tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "saved"
+hook = "world_saved"
+hook_version = 1
+kind = "HEAD"
+helper = "saved.rs"
+bindings = []
+
+[[injection]]
+id = "stopping"
+hook = "server_stopping"
+hook_version = 1
+kind = "HEAD"
+helper = "stopping.rs"
+bindings = []
